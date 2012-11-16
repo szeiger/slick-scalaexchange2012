@@ -1,6 +1,6 @@
 import scala.slick.driver.H2Driver.simple._
 
-object Demo extends App {
+object Demo { def main(args: Array[String]) {
 
   case class Supplier(id: Int, name: String, city: String)
   case class Coffee(name: String, supID: Int, price: Double)
@@ -11,6 +11,8 @@ object Demo extends App {
     def city   = column[String]("CITY")
     def * = id ~ name ~ city <> (Supplier, Supplier.unapply _)
     def ins = name ~ city returning id
+    def isLocal = city === "Meadows"
+    def byId = createFinderBy(_.id)
   }
 
   object Coffees extends Table[Coffee]("COFFEES") {
@@ -18,7 +20,8 @@ object Demo extends App {
     def supID = column[Int]("SUP_ID")
     def price = column[Double]("PRICE")
     def * = name ~ supID ~ price <> (Coffee, Coffee.unapply _)
-    //def supplier = foreignKey("SUP_FK", supID, Suppliers)(_.id)
+    def supplier = foreignKey("SUP_FK", supID, Suppliers)(_.id)
+    //def supplier = Suppliers.filter(_.id === supID)
   }
 
   val db = Database.forURL("jdbc:h2:mem:test1", driver = "org.h2.Driver")
@@ -48,6 +51,51 @@ object Demo extends App {
     val q1 = Coffees.map(_.price)
     println("Prices: " + q1.to[Array])
     println("Statement: "+q1.selectStatement)
+
+    val q2 = (for {
+      c <- Coffees
+      //s <- Suppliers if s.id === c.supID
+      s <- c.supplier if s.isLocal
+    } yield (c, s)).sortBy(_._2.id)
+    println(q2.list.mkString("With prices: ", "\n             ", ""))
+
+    println("Supplier 2: " + Suppliers.byId(2).list)
+
+    /*
+    def coffeesFromCity(city: String) = {
+      (for {
+        c <- Coffees
+        s <- c.supplier if s.city === city
+      } yield (c.name, s.id)).sortBy(_._1)
+    }
+    println("Coffees from Mendocino:")
+    coffeesFromCity("Mendocino").foreach { case (name, supID) =>
+      println(s"  Name: $name, supID: $supID")
+    }
+    println(coffeesFromCity("Mendocino").selectStatement)
+    */
+
+    val coffeesFromCity = Parameters[String].flatMap { city =>
+      (for {
+        c <- Coffees
+        s <- c.supplier if s.city === city
+      } yield (c.name, s.id)).sortBy(_._1)
+    }
+    println("Coffees from Mendocino:")
+    coffeesFromCity("Mendocino").foreach { case (name, supID) =>
+      println(s"  Name: $name, supID: $supID")
+    }
+    println(coffeesFromCity.selectStatement)
+
+    println
+
+    val q3 = for {
+      (c, s) <- Coffees leftJoin Suppliers.sortBy(_.id).take(2) on (_.supID === _.id)
+    } yield (c.name, s.city.?)
+    println(q3.list.mkString("q3: ", "\n    ", ""))
+    println("q3: " + q3.selectStatement)
+
+
     println
   }
-}
+}}
