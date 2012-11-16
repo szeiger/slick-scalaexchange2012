@@ -95,6 +95,13 @@ object Demo { def main(args: Array[String]) {
     println(q3.list.mkString("q3: ", "\n    ", ""))
     println("q3: " + q3.selectStatement)
 
+    val q4 = (for {
+      c <- Coffees
+      s <- c.supplier
+    } yield (s.name, c)).groupBy(_._1).map { case (sname, ts) =>
+      (sname, ts.length, ts.map(_._2.price).min.get)
+    }
+    println("q4: "+q4.list)
 
     println
   }
