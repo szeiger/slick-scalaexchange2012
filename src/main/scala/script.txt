@@ -131,3 +131,10 @@ object Demo extends App {
       (sname, ts.length, ts.map(_._2.price).min.get)
     }
     println(q4.list.mkString("q4: ", "\n    ", ""))
+
+///////////////////////////////////////////////////////////////////////////////
+
+    val upper = SimpleFunction.unary[String, String]("uCaSe", fn = true)
+
+    val q1 = Coffees.map(c => upper(c.name))
+    println(q1.selectStatement)
