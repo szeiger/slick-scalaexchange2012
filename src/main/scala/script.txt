@@ -95,7 +95,7 @@ object Demo extends App {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-    def coffeesFromCity(city: String) = { ...
+    def coffeesByCity(city: String) = { ...
 
     val coffeesByCity = Parameters[String].flatMap { city =>
       (for {
